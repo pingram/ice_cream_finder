@@ -31,7 +31,8 @@ def get_address
   [coordinates["lat"], coordinates["lng"]]
 end
 
-def get_ice_cream(lat, lng)
+def get_ice_cream(address_pos)
+  lat, lng = address_pos
   location = "#{lat},#{lng}"
   key = get_api_key
   keyword = 'Ice Cream'
@@ -58,20 +59,37 @@ def get_ice_cream(lat, lng)
   lng = first_result["geometry"]["location"]["lng"]
 
   [name, lat, lng]
-
 end
 
-# p get_api_key
+def get_directions(start_pos, end_pos)
+
+  origin = "#{start_pos.first},#{start_pos.last}"
+  destination = "#{end_pos.first},#{end_pos.last}"
+
+
+  directions_uri = Addressable::URI.new(
+                :scheme => "https",
+                :host => "maps.googleapis.com",
+                :path => "maps/api/directions/json",
+                :query_values => {:origin => origin,
+                                  :destination => destination,
+                                  :sensor => false}
+              ).to_s
+
+  directions_json = JSON.parse(RestClient.get(directions_uri))
+  steps_arr = directions_json["routes"].first["legs"].first["steps"]
+  html_directions = steps_arr.map do |step|
+    step["html_instructions"]
+  end
+end
 
 def run
-  lat, lng = get_address
+  start_pos = get_address
 
-  first_result =  get_ice_cream(lat, lng)
-  p first_result
+  first_result =  get_ice_cream(start_pos)
+  end_pos = first_result[1..2]
 
-
-
-  # p [lat, lng]
+  puts get_directions(start_pos, end_pos)
 end
 
 run
