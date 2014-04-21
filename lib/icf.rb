@@ -13,23 +13,65 @@ def get_api_key
   end
 end
 
-api_key = get_api_key
+def get_address
+  puts "what's your address?"
+  address_desc = gets.chomp
 
-puts "what's your address?"
-address_desc = gets.chomp
+  address_uri = Addressable::URI.new(
+                :scheme => "https",
+                :host => "maps.googleapis.com",
+                :path => "maps/api/geocode/json",
+                :query_values => {:address => address_desc,
+                                  :sensor => false}
+              ).to_s
 
-address_uri = Addressable::URI.new(
-              :scheme => "https",
-              :host => "maps.googleapis.com",
-              :path => "maps/api/geocode/json",
-              :query_values => {:address => address_desc,
-                                :sensor => false}
-            ).to_s
+  address_json = JSON.parse(RestClient.get(address_uri))
 
-address_json = JSON.parse(RestClient.get(address_uri))
+  coordinates =  address_json["results"].first["geometry"]["location"]
+  [coordinates["lat"], coordinates["lng"]]
+end
 
-coordinates =  address_json["results"].first["geometry"]["location"]
-lat = coordinates["lat"]
-lng = coordinates["lng"]
+def get_ice_cream(lat, lng)
+  location = "#{lat},#{lng}"
+  key = get_api_key
+  keyword = 'Ice Cream'
+  rankby = 'distance'
 
-p [lat, lng]
+  ice_cream_uri = Addressable::URI.new(
+                :scheme => "https",
+                :host => "maps.googleapis.com",
+                :path => "maps/api/place/nearbysearch/json",
+                :query_values => {:location => location,
+                                  :key => key,
+                                  :keyword => keyword,
+                                  :rankby => rankby,
+                                  :sensor => false}
+              ).to_s
+
+
+  ice_cream_json = JSON.parse(RestClient.get(ice_cream_uri))
+
+  first_result = ice_cream_json["results"].first
+
+  name = first_result["name"]
+  lat = first_result["geometry"]["location"]["lat"]
+  lng = first_result["geometry"]["location"]["lng"]
+
+  [name, lat, lng]
+
+end
+
+# p get_api_key
+
+def run
+  lat, lng = get_address
+
+  first_result =  get_ice_cream(lat, lng)
+  p first_result
+
+
+
+  # p [lat, lng]
+end
+
+run
